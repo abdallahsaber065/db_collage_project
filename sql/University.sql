@@ -1,3 +1,5 @@
+CREATE DATABASE  University;
+
 USE University;
 GO
 
