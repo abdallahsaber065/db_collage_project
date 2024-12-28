@@ -43,7 +43,7 @@ function Students() {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get('https://db-collage-project-server.vercel.app/api/students');
+      const response = await axios.get('http://localhost:5000/api/students');
       setStudents(response.data);
     } catch (error) {
       console.error('Error fetching students:', error);
@@ -52,7 +52,7 @@ function Students() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get('https://db-collage-project-server.vercel.app/api/departments');
+      const response = await axios.get('http://localhost:5000/api/departments');
       setDepartments(response.data);
     } catch (error) {
       console.error('Error fetching departments:', error);
@@ -122,9 +122,9 @@ function Students() {
       }
 
       if (editingStudent) {
-        await axios.put(`https://db-collage-project-server.vercel.app/api/students/${editingStudent.StudentID}`, formData);
+        await axios.put(`http://localhost:5000/api/students/${editingStudent.StudentID}`, formData);
       } else {
-        await axios.post('https://db-collage-project-server.vercel.app/api/students', formData);
+        await axios.post('http://localhost:5000/api/students', formData);
       }
       fetchStudents();
       handleClose();
@@ -137,7 +137,7 @@ function Students() {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this student? If they have any registrations, those will be deleted as well.')) {
       try {
-        const response = await axios.delete(`https://db-collage-project-server.vercel.app/api/students/${id}`);
+        const response = await axios.delete(`http://localhost:5000/api/students/${id}`);
         if (response.data.message) {
           fetchStudents();
           if (response.data.hadRegistrations) {

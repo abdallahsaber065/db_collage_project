@@ -19,6 +19,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         await poolConnect;
+        // use LIFT JOIN to include prerequisites
         const result = await pool.request()
             .input('id', sql.Int, req.params.id)
             .query(`
@@ -180,9 +181,9 @@ router.delete('/:id', async (req, res) => {
             (SELECT COUNT(*) FROM Lectures WHERE CourseID = @id) as LectureCount,
             (SELECT COUNT(*) FROM Labs WHERE CourseID = @id) as LabCount
         `);
-            
+
             const { RegistrationCount, PrerequisiteCount, LectureCount, LabCount } = checkResult.recordset[0];
-            
+
             if (RegistrationCount > 0 || LectureCount > 0 || LabCount > 0) {
                 throw new Error('Cannot delete course with existing registrations, lectures, or labs');
             }

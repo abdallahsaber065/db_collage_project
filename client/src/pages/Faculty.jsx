@@ -44,7 +44,7 @@ function Employees() {
 
   const fetchEmployees = async () => {
     try {
-      const response = await axios.get('https://db-collage-project-server.vercel.app/api/faculty'); // keeping the endpoint as faculty for now
+      const response = await axios.get('http://localhost:5000/api/faculty'); // keeping the endpoint as faculty for now
       setEmployees(response.data);
     } catch (error) {
       console.error('Error fetching employees:', error);
@@ -53,7 +53,7 @@ function Employees() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get('https://db-collage-project-server.vercel.app/api/departments');
+      const response = await axios.get('http://localhost:5000/api/departments');
       setDepartments(response.data);
     } catch (error) {
       console.error('Error fetching departments:', error);
@@ -118,9 +118,9 @@ function Employees() {
       }
 
       if (editingEmployee) {
-        await axios.put(`https://db-collage-project-server.vercel.app/api/faculty/${editingEmployee.EmployeeID}`, formData);
+        await axios.put(`http://localhost:5000/api/faculty/${editingEmployee.EmployeeID}`, formData);
       } else {
-        await axios.post('https://db-collage-project-server.vercel.app/api/faculty', formData);
+        await axios.post('http://localhost:5000/api/faculty', formData);
       }
       fetchEmployees();
       handleClose();
@@ -134,7 +134,7 @@ function Employees() {
     try {
       // First try to delete without force
       try {
-        const response = await axios.delete(`https://db-collage-project-server.vercel.app/api/faculty/${id}`);
+        const response = await axios.delete(`http://localhost:5000/api/faculty/${id}`);
         if (response.data.message) {
           fetchEmployees();
           alert('Employee deleted successfully');
@@ -144,7 +144,7 @@ function Employees() {
         if (error.response?.data?.message?.includes('teaching')) {
           if (window.confirm(error.response.data.message + '\nClick OK to delete everything.')) {
             // Retry with force delete
-            const forceResponse = await axios.delete(`https://db-collage-project-server.vercel.app/api/faculty/${id}?force=true`);
+            const forceResponse = await axios.delete(`http://localhost:5000/api/faculty/${id}?force=true`);
             if (forceResponse.data.message) {
               fetchEmployees();
               alert('Employee and their teaching assignments have been deleted successfully.');

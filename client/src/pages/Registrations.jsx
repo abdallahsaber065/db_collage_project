@@ -50,7 +50,7 @@ function Registrations() {
 
   const fetchRegistrations = async () => {
     try {
-      const response = await axios.get('https://db-collage-project-server.vercel.app/api/registrations');
+      const response = await axios.get('http://localhost:5000/api/registrations');
       setRegistrations(response.data);
     } catch (error) {
       console.error('Error fetching registrations:', error);
@@ -59,7 +59,7 @@ function Registrations() {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get('https://db-collage-project-server.vercel.app/api/students');
+      const response = await axios.get('http://localhost:5000/api/students');
       setStudents(response.data);
     } catch (error) {
       console.error('Error fetching students:', error);
@@ -68,7 +68,7 @@ function Registrations() {
 
   const fetchCourses = async () => {
     try {
-      const response = await axios.get('https://db-collage-project-server.vercel.app/api/courses');
+      const response = await axios.get('http://localhost:5000/api/courses');
       setCourses(response.data);
     } catch (error) {
       console.error('Error fetching courses:', error);
@@ -78,8 +78,8 @@ function Registrations() {
   const fetchLecturesAndLabs = async (courseId) => {
     try {
       const [lecturesResponse, labsResponse] = await Promise.all([
-        axios.get(`https://db-collage-project-server.vercel.app/api/lectures?courseId=${courseId}`),
-        axios.get(`https://db-collage-project-server.vercel.app/api/labs?courseId=${courseId}`)
+        axios.get(`http://localhost:5000/api/lectures?courseId=${courseId}`),
+        axios.get(`http://localhost:5000/api/labs?courseId=${courseId}`)
       ]);
       
       setLectures(lecturesResponse.data.map(lecture => ({
@@ -171,9 +171,9 @@ function Registrations() {
           LabID: formData.LabID === '' ? null : formData.LabID,
           Grade: formData.Grade || null
         };
-        response = await axios.put(`https://db-collage-project-server.vercel.app/api/registrations/${editingRegistration.RegistrationID}`, updateData);
+        response = await axios.put(`http://localhost:5000/api/registrations/${editingRegistration.RegistrationID}`, updateData);
       } else {
-        response = await axios.post('https://db-collage-project-server.vercel.app/api/registrations', {
+        response = await axios.post('http://localhost:5000/api/registrations', {
           ...formData,
           LabID: formData.LabID === '' ? null : formData.LabID
         });
@@ -193,7 +193,7 @@ function Registrations() {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this registration?')) {
       try {
-        const response = await axios.delete(`https://db-collage-project-server.vercel.app/api/registrations/${id}`);
+        const response = await axios.delete(`http://localhost:5000/api/registrations/${id}`);
         if (response.data.message) {
           fetchRegistrations();
         }
