@@ -1,0 +1,12 @@
+{
+    "rewrites": [
+        {
+            "source": "/api/:path*",
+            "destination": "https://db-collage-project-server.vercel.app/api/:path*"
+        },
+        {
+            "source": "/api/:path*/",
+            "destination": "https://db-collage-project-server.vercel.app/api/:path*/"
+        }
+    ]
+}

@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/server.js"
+    }
+  ],
+  "env": {
+    "DB_SERVER": "sql.bsite.net\\MSSQL2016",
+    "DB_USER": "abdallahsaber065_",
+    "DB_PASSWORD": "ure.CPG9jhe7wgb8eda",
+    "DB_NAME": "abdallahsaber065_"
+  }
+} 

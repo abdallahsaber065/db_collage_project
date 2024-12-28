@@ -37,10 +37,10 @@ function Departments() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get('/api/departments');
+      const response = await axios.get('https://db-collage-project-server.vercel.app/api/departments');
       const departmentsWithCounts = await Promise.all(
         response.data.map(async (dept) => {
-          const detailsResponse = await axios.get(`/api/departments/${dept.DepartmentID}`);
+          const detailsResponse = await axios.get(`https://db-collage-project-server.vercel.app/api/departments/${dept.DepartmentID}`);
           return { ...dept, ...detailsResponse.data };
         })
       );
@@ -93,9 +93,9 @@ function Departments() {
       }
 
       if (editingDepartment) {
-        await axios.put(`/api/departments/${editingDepartment.DepartmentID}`, formData);
+        await axios.put(`https://db-collage-project-server.vercel.app/api/departments/${editingDepartment.DepartmentID}`, formData);
       } else {
-        await axios.post('/api/departments', formData);
+        await axios.post('https://db-collage-project-server.vercel.app/api/departments', formData);
       }
       fetchDepartments();
       handleClose();
@@ -108,7 +108,7 @@ function Departments() {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this department?')) {
       try {
-        await axios.delete(`/api/departments/${id}`);
+        await axios.delete(`https://db-collage-project-server.vercel.app/api/departments/${id}`);
         fetchDepartments();
       } catch (error) {
         console.error('Error deleting department:', error);

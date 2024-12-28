@@ -44,10 +44,10 @@ function Courses() {
 
   const fetchCourses = async () => {
     try {
-      const response = await axios.get('/api/courses');
+      const response = await axios.get('https://db-collage-project-server.vercel.app/api/courses');
       const coursesWithDetails = await Promise.all(
         response.data.map(async (course) => {
-          const detailsResponse = await axios.get(`/api/courses/${course.CourseID}`);
+          const detailsResponse = await axios.get(`https://db-collage-project-server.vercel.app/api/courses/${course.CourseID}`);
           return detailsResponse.data;
         })
       );
@@ -59,7 +59,7 @@ function Courses() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get('/api/departments');
+      const response = await axios.get('https://db-collage-project-server.vercel.app/api/departments');
       setDepartments(response.data);
     } catch (error) {
       console.error('Error fetching departments:', error);
@@ -110,9 +110,9 @@ function Courses() {
   const handleSubmit = async () => {
     try {
       if (editingCourse) {
-        await axios.put(`/api/courses/${editingCourse.CourseID}`, formData);
+        await axios.put(`https://db-collage-project-server.vercel.app/api/courses/${editingCourse.CourseID}`, formData);
       } else {
-        await axios.post('/api/courses', formData);
+        await axios.post('https://db-collage-project-server.vercel.app/api/courses', formData);
       }
       fetchCourses();
       handleClose();
@@ -124,7 +124,7 @@ function Courses() {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this course?')) {
       try {
-        const response = await axios.delete(`/api/courses/${id}`);
+        const response = await axios.delete(`https://db-collage-project-server.vercel.app/api/courses/${id}`);
         if (response.data.message) {
           fetchCourses();
         }
