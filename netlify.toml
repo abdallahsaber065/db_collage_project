@@ -1,0 +1,19 @@
+[build]
+  command = "pnpm install --frozen-lockfile && pnpm --filter frontend run build"
+  publish = "frontend/dist"
+  functions = "backend/netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["express", "cors", "dotenv", "pg", "serverless-http"]
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

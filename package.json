@@ -1,0 +1,18 @@
+{
+    "name": "college-db-project",
+    "private": true,
+    "workspaces": [
+        "backend",
+        "frontend"
+    ],
+    "scripts": {
+        "dev:backend": "pnpm --dir backend run dev",
+        "dev:frontend": "pnpm --dir frontend run dev",
+        "dev:netlify": "netlify dev",
+        "build:frontend": "pnpm --dir frontend run build",
+        "build:backend": "pnpm --dir backend run type-check",
+        "build": "pnpm run build:backend && pnpm run build:frontend",
+        "clean": "rm -rf backend/node_modules frontend/node_modules && rm -f backend/package-lock.json frontend/package-lock.json && rm -f backend/pnpm-lock.yaml frontend/pnpm-lock.yaml",
+        "type-check": "cd backend && pnpm run type-check && cd ../frontend && pnpm run type-check"
+    }
+}

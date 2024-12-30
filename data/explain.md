@@ -11,7 +11,7 @@ This is a full-stack web application for managing university operations, built w
 - **Technology Stack**: Node.js, Express
 - **Database**: Microsoft SQL Server
 
-### Frontend (@client)
+### Frontend
 
 - **Technology Stack**: ReactJS
 

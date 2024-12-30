@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/src/index.js"
+    }
+  ],
+  "env": {
+    "DB_HOST": "",
+    "DB_PORT": "5432",
+    "DB_USER": "",
+    "DB_PASSWORD": "",
+    "DB_DATABASE": ""
+  }
+} 
