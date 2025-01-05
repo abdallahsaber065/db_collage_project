@@ -18,16 +18,45 @@ import {
   IconButton,
   Chip,
   Alert,
+  Typography,
+  InputAdornment,
+  Card,
+  CardContent,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import {
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Business as DeptIcon,
+  People as PeopleIcon,
+  School as FacultyIcon,
+  MenuBook as CoursesIcon,
+  Search as SearchIcon,
+  Close as CloseIcon,
+  LocationOn as LocationIcon,
+} from '@mui/icons-material';
+import { useSnackbar } from 'notistack';
 import api from '../utils/api';
 import { appConfig } from '../config/appConfig';
+import PageHeader from '../components/PageHeader';
+import StatsCard from '../components/StatsCard';
+import { TableSkeleton, StatsSkeleton } from '../components/LoadingSkeleton';
+import EmptyState from '../components/EmptyState';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 function Departments() {
   const isPreviewMode = appConfig.previewMode;
+  const { enqueueSnackbar } = useSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
   const [departments, setDepartments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editingDepartment, setEditingDepartment] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null, name: '' });
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     Name: '',
@@ -39,6 +68,7 @@ function Departments() {
   }, []);
 
   const fetchDepartments = async () => {
+    setLoading(true);
     try {
       const response = await api.get('/departments');
       const departmentsWithCounts = await Promise.all(
@@ -48,24 +78,20 @@ function Departments() {
         })
       );
       setDepartments(departmentsWithCounts);
-    } catch (error) {
-      console.error('Error fetching departments:', error);
+    } catch (err) {
+      enqueueSnackbar('Failed to load departments', { variant: 'error' });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleOpen = (department = null) => {
     if (department) {
       setEditingDepartment(department);
-      setFormData({
-        Name: department.Name,
-        OfficeLocation: department.OfficeLocation,
-      });
+      setFormData({ Name: department.Name, OfficeLocation: department.OfficeLocation });
     } else {
       setEditingDepartment(null);
-      setFormData({
-        Name: '',
-        OfficeLocation: '',
-      });
+      setFormData({ Name: '', OfficeLocation: '' });
     }
     setError('');
     setOpen(true);
@@ -82,17 +108,12 @@ function Departments() {
   };
 
   const handleSubmit = async () => {
-    if (isPreviewMode) {
-      return;
-    }
+    if (isPreviewMode) return;
     try {
-      // Validate required fields
       if (!formData.Name || !formData.OfficeLocation) {
         setError('Please fill in all required fields');
         return;
       }
-
-      // Validate name length
       if (formData.Name.length < 2 || formData.Name.length > 50) {
         setError('Department name must be between 2 and 50 characters');
         return;
@@ -100,122 +121,306 @@ function Departments() {
 
       if (editingDepartment) {
         await api.put(`/departments/${editingDepartment.DepartmentID}`, formData);
+        enqueueSnackbar('Department updated successfully', { variant: 'success' });
       } else {
         await api.post('/departments', formData);
+        enqueueSnackbar('Department added successfully', { variant: 'success' });
       }
       fetchDepartments();
       handleClose();
-    } catch (error) {
-      console.error('Error saving department:', error);
-      setError(error.response?.data?.message || 'Error saving department');
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Error saving department';
+      setError(msg);
+      enqueueSnackbar(msg, { variant: 'error' });
     }
   };
 
-  const handleDelete = async (id) => {
-    if (isPreviewMode) {
-      return;
-    }
-    if (window.confirm('Are you sure you want to delete this department?')) {
-      try {
-        await api.delete(`/departments/${id}`);
-        fetchDepartments();
-      } catch (error) {
-        console.error('Error deleting department:', error);
-        if (error.response?.data?.message) {
-          alert(error.response.data.message);
-        }
-      }
+  const handleDeleteClick = (dept) => {
+    if (isPreviewMode) return;
+    setDeleteConfirm({ open: true, id: dept.DepartmentID, name: dept.Name });
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await api.delete(`/departments/${deleteConfirm.id}`);
+      fetchDepartments();
+      enqueueSnackbar('Department deleted successfully', { variant: 'success' });
+    } catch (err) {
+      enqueueSnackbar(err.response?.data?.message || 'Error deleting department', { variant: 'error' });
+    } finally {
+      setDeleteConfirm({ open: false, id: null, name: '' });
     }
   };
+
+  const filtered = departments.filter(
+    (d) =>
+      d.Name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      d.OfficeLocation?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const totalStudents = departments.reduce((sum, d) => sum + (d.StudentCount || 0), 0);
+  const totalFaculty = departments.reduce((sum, d) => sum + (d.FacultyCount || 0), 0);
+  const totalCourses = departments.reduce((sum, d) => sum + (d.CourseCount || 0), 0);
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-        <h1>Departments</h1>
-        <Button variant="contained" onClick={() => handleOpen()} disabled={isPreviewMode}>
-          Add Department
-        </Button>
-      </Box>
+      <PageHeader
+        title="Departments"
+        subtitle="Manage academic departments and their resources"
+        icon={DeptIcon}
+        actionLabel="Add Department"
+        onAction={() => handleOpen()}
+        actionDisabled={isPreviewMode}
+        count={departments.length}
+      />
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Office Location</TableCell>
-              <TableCell>Students</TableCell>
-              <TableCell>Faculty</TableCell>
-              <TableCell>Courses</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {departments.map((department) => (
-              <TableRow key={department.DepartmentID}>
-                <TableCell>{department.Name}</TableCell>
-                <TableCell>{department.OfficeLocation}</TableCell>
-                <TableCell>
-                  <Chip 
-                    label={department.StudentCount || 0}
-                    color={department.StudentCount > 0 ? "primary" : "default"}
-                  />
-                </TableCell>
-                <TableCell>
-                  <Chip 
-                    label={department.FacultyCount || 0}
-                    color={department.FacultyCount > 0 ? "primary" : "default"}
-                  />
-                </TableCell>
-                <TableCell>
-                  <Chip 
-                    label={department.CourseCount || 0}
-                    color={department.CourseCount > 0 ? "primary" : "default"}
-                  />
-                </TableCell>
-                <TableCell>
-                  <IconButton onClick={() => handleOpen(department)} disabled={isPreviewMode}>
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(department.DepartmentID)} disabled={isPreviewMode}>
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
+      {/* Stats */}
+      {loading ? (
+        <StatsSkeleton count={4} />
+      ) : (
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 2, mb: 4 }}>
+          <StatsCard label="Departments" value={departments.length} icon={DeptIcon} color="#6366f1" delay={0} />
+          <StatsCard label="Students" value={totalStudents} icon={PeopleIcon} color="#3b82f6" delay={0.1} />
+          <StatsCard label="Faculty" value={totalFaculty} icon={FacultyIcon} color="#059669" delay={0.15} />
+          <StatsCard label="Courses" value={totalCourses} icon={CoursesIcon} color="#f59e0b" delay={0.2} />
+        </Box>
+      )}
+
+      {/* Search */}
+      {!loading && departments.length > 0 && (
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            placeholder="Search departments..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            size="small"
+            fullWidth
+            sx={{ maxWidth: 420 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: '#94a3b8', fontSize: 20 }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Box>
+      )}
+
+      {/* Cards layout for mobile, table for desktop */}
+      {loading ? (
+        <TableSkeleton rows={4} columns={5} />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon={DeptIcon}
+          title={searchQuery ? 'No departments match your search' : 'No departments yet'}
+          subtitle={searchQuery ? 'Try a different keyword' : 'Create your first department'}
+          actionLabel={!searchQuery ? 'Add Department' : undefined}
+          onAction={() => handleOpen()}
+        />
+      ) : isMobile ? (
+        /* Card layout for mobile */
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {filtered.map((dept) => (
+            <Card key={dept.DepartmentID}>
+              <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                  <Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1e293b' }}>
+                      {dept.Name}
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                      <LocationIcon sx={{ fontSize: 14, color: '#94a3b8' }} />
+                      <Typography variant="caption" sx={{ color: '#64748b' }}>
+                        {dept.OfficeLocation}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleOpen(dept)}
+                      disabled={isPreviewMode}
+                      sx={{ color: '#6366f1', bgcolor: 'rgba(99,102,241,0.08)' }}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDeleteClick(dept)}
+                      disabled={isPreviewMode}
+                      sx={{ color: '#ef4444', bgcolor: 'rgba(239,68,68,0.08)' }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Chip icon={<PeopleIcon sx={{ fontSize: '16px !important' }} />} label={`${dept.StudentCount || 0} Students`} size="small" variant="outlined" />
+                  <Chip icon={<FacultyIcon sx={{ fontSize: '16px !important' }} />} label={`${dept.FacultyCount || 0} Faculty`} size="small" variant="outlined" />
+                  <Chip icon={<CoursesIcon sx={{ fontSize: '16px !important' }} />} label={`${dept.CourseCount || 0} Courses`} size="small" variant="outlined" />
+                </Box>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
+      ) : (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Department</TableCell>
+                <TableCell>Office Location</TableCell>
+                <TableCell align="center">Students</TableCell>
+                <TableCell align="center">Faculty</TableCell>
+                <TableCell align="center">Courses</TableCell>
+                <TableCell align="right">Actions</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {filtered.map((dept) => (
+                <TableRow key={dept.DepartmentID}>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Box
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: '10px',
+                          bgcolor: '#ede9fe',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <DeptIcon sx={{ fontSize: 18, color: '#6366f1' }} />
+                      </Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {dept.Name}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <LocationIcon sx={{ fontSize: 16, color: '#94a3b8' }} />
+                      <Typography variant="body2" sx={{ color: '#64748b' }}>
+                        {dept.OfficeLocation}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell align="center">
+                    <Chip
+                      label={dept.StudentCount || 0}
+                      size="small"
+                      sx={{
+                        bgcolor: (dept.StudentCount || 0) > 0 ? '#eff6ff' : '#f1f5f9',
+                        color: (dept.StudentCount || 0) > 0 ? '#2563eb' : '#94a3b8',
+                        fontWeight: 700,
+                        minWidth: 36,
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell align="center">
+                    <Chip
+                      label={dept.FacultyCount || 0}
+                      size="small"
+                      sx={{
+                        bgcolor: (dept.FacultyCount || 0) > 0 ? '#ecfdf5' : '#f1f5f9',
+                        color: (dept.FacultyCount || 0) > 0 ? '#059669' : '#94a3b8',
+                        fontWeight: 700,
+                        minWidth: 36,
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell align="center">
+                    <Chip
+                      label={dept.CourseCount || 0}
+                      size="small"
+                      sx={{
+                        bgcolor: (dept.CourseCount || 0) > 0 ? '#fefce8' : '#f1f5f9',
+                        color: (dept.CourseCount || 0) > 0 ? '#d97706' : '#94a3b8',
+                        fontWeight: 700,
+                        minWidth: 36,
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleOpen(dept)}
+                        disabled={isPreviewMode}
+                        sx={{ color: '#6366f1', bgcolor: 'rgba(99,102,241,0.08)', '&:hover': { bgcolor: 'rgba(99,102,241,0.16)' } }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteClick(dept)}
+                        disabled={isPreviewMode}
+                        sx={{ color: '#ef4444', bgcolor: 'rgba(239,68,68,0.08)', '&:hover': { bgcolor: 'rgba(239,68,68,0.16)' } }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>{editingDepartment ? 'Edit Department' : 'Add Department'}</DialogTitle>
+      {/* Form Dialog */}
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <DeptIcon sx={{ color: '#fff', fontSize: 22 }} />
+            </Box>
+            {editingDepartment ? 'Edit Department' : 'New Department'}
+          </Box>
+          <IconButton onClick={handleClose} size="small" sx={{ color: '#94a3b8' }}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-            {error && <Alert severity="error">{error}</Alert>}
-            <TextField
-              name="Name"
-              label="Name"
-              value={formData.Name}
-              onChange={handleChange}
-              fullWidth
-            />
-            <TextField
-              name="OfficeLocation"
-              label="Office Location"
-              value={formData.OfficeLocation}
-              onChange={handleChange}
-              fullWidth
-            />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1.5 }}>
+            {error && <Alert severity="error" sx={{ borderRadius: '12px' }}>{error}</Alert>}
+            <TextField name="Name" label="Department Name" value={formData.Name} onChange={handleChange} fullWidth required />
+            <TextField name="OfficeLocation" label="Office Location" value={formData.OfficeLocation} onChange={handleChange} fullWidth required />
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={handleClose} sx={{ color: '#64748b', fontWeight: 600 }}>Cancel</Button>
           <Button onClick={handleSubmit} variant="contained" disabled={isPreviewMode}>
-            {editingDepartment ? 'Update' : 'Add'}
+            {editingDepartment ? 'Update Department' : 'Add Department'}
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        title="Delete Department"
+        message={`Are you sure you want to delete "${deleteConfirm.name}"? This may affect associated students, faculty, and courses.`}
+        confirmLabel="Delete"
+        severity="error"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteConfirm({ open: false, id: null, name: '' })}
+      />
     </Box>
   );
 }
 
-export default Departments; 
+export default Departments;
