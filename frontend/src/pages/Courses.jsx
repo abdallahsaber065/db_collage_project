@@ -29,6 +29,9 @@ import {
   useMediaQuery,
   Card,
   CardContent,
+  Checkbox,
+  ListItemText,
+  Divider,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -402,19 +405,46 @@ function Courses() {
                 value={formData.Prerequisites}
                 onChange={handlePrerequisitesChange}
                 input={<OutlinedInput label="Prerequisites" />}
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.map((value) => (
-                      <Chip key={value} label={courses.find((c) => c.CourseID === value)?.Name} size="small" />
-                    ))}
-                  </Box>
-                )}
+                renderValue={(selected) =>
+                  selected.length === 0 ? (
+                    <Typography variant="body2" sx={{ color: '#94a3b8' }}>None selected</Typography>
+                  ) : (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.map((value) => (
+                        <Chip
+                          key={value}
+                          label={courses.find((c) => c.CourseID === value)?.Name}
+                          size="small"
+                          sx={{ bgcolor: '#ede9fe', color: '#6366f1', fontWeight: 600 }}
+                        />
+                      ))}
+                    </Box>
+                  )
+                }
+                MenuProps={{ PaperProps: { sx: { maxHeight: 300 } } }}
               >
+                {formData.Prerequisites.length > 0 && [
+                  <MenuItem key="__selected_header" disabled sx={{ opacity: 1, py: 0.5 }}>
+                    <Typography variant="caption" sx={{ color: '#6366f1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                      Selected ({formData.Prerequisites.length})
+                    </Typography>
+                  </MenuItem>,
+                  ...courses
+                    .filter((c) => formData.Prerequisites.includes(c.CourseID) && (!editingCourse || c.CourseID !== editingCourse.CourseID))
+                    .map((course) => (
+                      <MenuItem key={`sel-${course.CourseID}`} value={course.CourseID} sx={{ bgcolor: 'rgba(99,102,241,0.04)' }}>
+                        <Checkbox checked size="small" sx={{ color: '#6366f1', '&.Mui-checked': { color: '#6366f1' }, p: 0.5 }} />
+                        <ListItemText primary={course.Name} primaryTypographyProps={{ variant: 'body2', fontWeight: 600 }} />
+                      </MenuItem>
+                    )),
+                  <Divider key="__divider" sx={{ my: 0.5 }} />,
+                ]}
                 {courses
-                  .filter((course) => !editingCourse || course.CourseID !== editingCourse.CourseID)
+                  .filter((c) => !formData.Prerequisites.includes(c.CourseID) && (!editingCourse || c.CourseID !== editingCourse.CourseID))
                   .map((course) => (
                     <MenuItem key={course.CourseID} value={course.CourseID}>
-                      {course.Name}
+                      <Checkbox checked={false} size="small" sx={{ p: 0.5 }} />
+                      <ListItemText primary={course.Name} primaryTypographyProps={{ variant: 'body2' }} />
                     </MenuItem>
                   ))}
               </Select>

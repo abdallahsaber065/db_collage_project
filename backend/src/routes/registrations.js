@@ -62,7 +62,7 @@ router.get('/:id', async (req, res) => {
         LEFT JOIN Labs lab ON r.LabID = lab.LabID
         WHERE r.RegistrationID = @id
       `);
-    
+
     if (result.recordset.length === 0) {
       return res.status(404).json({ message: 'Registration not found' });
     }
@@ -87,7 +87,7 @@ router.post('/', async (req, res) => {
       const studentCheck = await new sql.Request(transaction)
         .input('studentId', sql.Int, StudentID)
         .query('SELECT * FROM Students WHERE StudentID = @studentId');
-      
+
       if (studentCheck.recordset.length === 0) {
         throw new Error('Student not found');
       }
@@ -96,7 +96,7 @@ router.post('/', async (req, res) => {
       const courseCheck = await new sql.Request(transaction)
         .input('courseId', sql.Int, CourseID)
         .query('SELECT * FROM Courses WHERE CourseID = @courseId');
-      
+
       if (courseCheck.recordset.length === 0) {
         throw new Error('Course not found');
       }
@@ -106,7 +106,7 @@ router.post('/', async (req, res) => {
         .input('lectureId', sql.Int, LectureID)
         .input('courseId', sql.Int, CourseID)
         .query('SELECT * FROM Lectures WHERE LectureID = @lectureId AND CourseID = @courseId');
-      
+
       if (lectureCheck.recordset.length === 0) {
         throw new Error('Invalid lecture for this course');
       }
@@ -117,7 +117,7 @@ router.post('/', async (req, res) => {
           .input('labId', sql.Int, LabID)
           .input('courseId', sql.Int, CourseID)
           .query('SELECT * FROM Labs WHERE LabID = @labId AND CourseID = @courseId');
-        
+
         if (labCheck.recordset.length === 0) {
           throw new Error('Invalid lab for this course');
         }
@@ -221,7 +221,7 @@ router.put('/:id', async (req, res) => {
           JOIN Courses c ON r.CourseID = c.CourseID
           WHERE r.RegistrationID = @id
         `);
-      
+
       if (registrationCheck.recordset.length === 0) {
         throw new Error('Registration not found');
       }
@@ -238,7 +238,7 @@ router.put('/:id', async (req, res) => {
             WHERE LectureID = @lectureId 
             AND CourseID = @courseId
           `);
-        
+
         if (lectureCheck.recordset.length === 0) {
           throw new Error('Invalid lecture for this course');
         }
@@ -278,7 +278,7 @@ router.put('/:id', async (req, res) => {
             WHERE LabID = @labId 
             AND CourseID = @courseId
           `);
-        
+
         if (labCheck.recordset.length === 0) {
           throw new Error('Invalid lab for this course');
         }
@@ -316,14 +316,14 @@ router.put('/:id', async (req, res) => {
       // Update registration
       const result = await new sql.Request(transaction)
         .input('id', sql.Int, req.params.id)
-        .input('lectureId', sql.Int, LectureID)
-        .input('labId', sql.Int, LabID)
-        .input('grade', sql.VarChar(2), Grade)
+        .input('lectureId', sql.Int, LectureID || null)
+        .input('labId', sql.Int, LabID || null)
+        .input('grade', sql.VarChar(2), Grade || null)
         .query(`
           UPDATE Registrations
-          SET LectureID = COALESCE(@lectureId, LectureID),
-              LabID = CASE WHEN @labId IS NULL THEN NULL ELSE COALESCE(@labId, LabID) END,
-              Grade = COALESCE(@grade, Grade)
+          SET LectureID = COALESCE(@lectureId::int, LectureID),
+              LabID = @labId::int,
+              Grade = COALESCE(@grade::varchar, Grade)
           WHERE RegistrationID = @id
           RETURNING RegistrationID,
                 StudentID,
@@ -379,7 +379,7 @@ router.delete('/:id', async (req, res) => {
         WHERE RegistrationID = @id
         RETURNING *
       `);
-    
+
     if (result.recordset.length === 0) {
       return res.status(404).json({ message: 'Registration not found' });
     }
