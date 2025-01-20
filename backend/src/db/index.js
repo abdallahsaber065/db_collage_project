@@ -150,7 +150,14 @@ const LEGACY_KEY_MAP = {
   lecturecount: 'LectureCount',
   labcount: 'LabCount',
   registrationcount: 'RegistrationCount',
-  prerequisitecount: 'PrerequisiteCount'
+  prerequisitecount: 'PrerequisiteCount',
+  grade: 'Grade',
+  email: 'Email',
+  dateofbirth: 'DateOfBirth',
+  enrollmentdate: 'EnrollmentDate',
+  coursetype: 'CourseType',
+  description: 'Description',
+  prerequisites: 'Prerequisites'
 };
 
 function mapRowsToLegacyKeys(rows) {

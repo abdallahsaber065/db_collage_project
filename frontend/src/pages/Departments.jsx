@@ -24,6 +24,8 @@ import {
   CardContent,
   useTheme,
   useMediaQuery,
+  CircularProgress,
+  Divider,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -62,6 +64,7 @@ function Departments() {
     Name: '',
     OfficeLocation: '',
   });
+  const [drilldown, setDrilldown] = useState({ open: false, type: null, deptName: '', rows: [], loading: false });
 
   useEffect(() => {
     fetchDepartments();
@@ -152,15 +155,36 @@ function Departments() {
     }
   };
 
+  const handleDrilldown = async (type, dept) => {
+    setDrilldown({ open: true, type, deptName: dept.Name, rows: [], loading: true });
+    try {
+      let rows = [];
+      if (type === 'Students') {
+        const res = await api.get('/students');
+        rows = res.data.filter((s) => s.Major === dept.DepartmentID || s.Major === String(dept.DepartmentID));
+      } else if (type === 'Faculty') {
+        const res = await api.get('/faculty');
+        rows = res.data.filter((e) => e.DepartmentID === dept.DepartmentID || e.DepartmentID === String(dept.DepartmentID));
+      } else if (type === 'Courses') {
+        const res = await api.get('/courses');
+        rows = res.data.filter((c) => c.DepartmentID === dept.DepartmentID || c.DepartmentID === String(dept.DepartmentID));
+      }
+      setDrilldown((d) => ({ ...d, rows, loading: false }));
+    } catch (err) {
+      enqueueSnackbar('Failed to load details', { variant: 'error' });
+      setDrilldown((d) => ({ ...d, loading: false }));
+    }
+  };
+
   const filtered = departments.filter(
     (d) =>
       d.Name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       d.OfficeLocation?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const totalStudents = departments.reduce((sum, d) => sum + (d.StudentCount || 0), 0);
-  const totalFaculty = departments.reduce((sum, d) => sum + (d.FacultyCount || 0), 0);
-  const totalCourses = departments.reduce((sum, d) => sum + (d.CourseCount || 0), 0);
+  const totalStudents = departments.reduce((sum, d) => sum + (parseInt(d.StudentCount) || 0), 0);
+  const totalFaculty = departments.reduce((sum, d) => sum + (parseInt(d.FacultyCount) || 0), 0);
+  const totalCourses = departments.reduce((sum, d) => sum + (parseInt(d.CourseCount) || 0), 0);
 
   return (
     <Box>
@@ -256,9 +280,9 @@ function Departments() {
                   </Box>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Chip icon={<PeopleIcon sx={{ fontSize: '16px !important' }} />} label={`${dept.StudentCount || 0} Students`} size="small" variant="outlined" />
-                  <Chip icon={<FacultyIcon sx={{ fontSize: '16px !important' }} />} label={`${dept.FacultyCount || 0} Faculty`} size="small" variant="outlined" />
-                  <Chip icon={<CoursesIcon sx={{ fontSize: '16px !important' }} />} label={`${dept.CourseCount || 0} Courses`} size="small" variant="outlined" />
+                  <Chip onClick={() => handleDrilldown('Students', dept)} icon={<PeopleIcon sx={{ fontSize: '16px !important' }} />} label={`${parseInt(dept.StudentCount) || 0} Students`} size="small" variant="outlined" sx={{ cursor: 'pointer' }} />
+                  <Chip onClick={() => handleDrilldown('Faculty', dept)} icon={<FacultyIcon sx={{ fontSize: '16px !important' }} />} label={`${parseInt(dept.FacultyCount) || 0} Faculty`} size="small" variant="outlined" sx={{ cursor: 'pointer' }} />
+                  <Chip onClick={() => handleDrilldown('Courses', dept)} icon={<CoursesIcon sx={{ fontSize: '16px !important' }} />} label={`${parseInt(dept.CourseCount) || 0} Courses`} size="small" variant="outlined" sx={{ cursor: 'pointer' }} />
                 </Box>
               </CardContent>
             </Card>
@@ -310,37 +334,46 @@ function Departments() {
                   </TableCell>
                   <TableCell align="center">
                     <Chip
-                      label={dept.StudentCount || 0}
+                      label={parseInt(dept.StudentCount) || 0}
                       size="small"
+                      onClick={() => handleDrilldown('Students', dept)}
                       sx={{
-                        bgcolor: (dept.StudentCount || 0) > 0 ? '#eff6ff' : '#f1f5f9',
-                        color: (dept.StudentCount || 0) > 0 ? '#2563eb' : '#94a3b8',
+                        bgcolor: (parseInt(dept.StudentCount) || 0) > 0 ? '#eff6ff' : '#f1f5f9',
+                        color: (parseInt(dept.StudentCount) || 0) > 0 ? '#2563eb' : '#94a3b8',
                         fontWeight: 700,
                         minWidth: 36,
+                        cursor: 'pointer',
+                        '&:hover': { opacity: 0.8 },
                       }}
                     />
                   </TableCell>
                   <TableCell align="center">
                     <Chip
-                      label={dept.FacultyCount || 0}
+                      label={parseInt(dept.FacultyCount) || 0}
                       size="small"
+                      onClick={() => handleDrilldown('Faculty', dept)}
                       sx={{
-                        bgcolor: (dept.FacultyCount || 0) > 0 ? '#ecfdf5' : '#f1f5f9',
-                        color: (dept.FacultyCount || 0) > 0 ? '#059669' : '#94a3b8',
+                        bgcolor: (parseInt(dept.FacultyCount) || 0) > 0 ? '#ecfdf5' : '#f1f5f9',
+                        color: (parseInt(dept.FacultyCount) || 0) > 0 ? '#059669' : '#94a3b8',
                         fontWeight: 700,
                         minWidth: 36,
+                        cursor: 'pointer',
+                        '&:hover': { opacity: 0.8 },
                       }}
                     />
                   </TableCell>
                   <TableCell align="center">
                     <Chip
-                      label={dept.CourseCount || 0}
+                      label={parseInt(dept.CourseCount) || 0}
                       size="small"
+                      onClick={() => handleDrilldown('Courses', dept)}
                       sx={{
-                        bgcolor: (dept.CourseCount || 0) > 0 ? '#fefce8' : '#f1f5f9',
-                        color: (dept.CourseCount || 0) > 0 ? '#d97706' : '#94a3b8',
+                        bgcolor: (parseInt(dept.CourseCount) || 0) > 0 ? '#fefce8' : '#f1f5f9',
+                        color: (parseInt(dept.CourseCount) || 0) > 0 ? '#d97706' : '#94a3b8',
                         fontWeight: 700,
                         minWidth: 36,
+                        cursor: 'pointer',
+                        '&:hover': { opacity: 0.8 },
                       }}
                     />
                   </TableCell>
@@ -406,6 +439,127 @@ function Departments() {
           <Button onClick={handleSubmit} variant="contained" disabled={isPreviewMode}>
             {editingDepartment ? 'Update Department' : 'Add Department'}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Drilldown Dialog */}
+      <Dialog open={drilldown.open} onClose={() => setDrilldown((d) => ({ ...d, open: false }))} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: '10px',
+                bgcolor: drilldown.type === 'Students' ? '#eff6ff' : drilldown.type === 'Faculty' ? '#ecfdf5' : '#fefce8',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {drilldown.type === 'Students' ? (
+                <PeopleIcon sx={{ fontSize: 18, color: '#2563eb' }} />
+              ) : drilldown.type === 'Faculty' ? (
+                <FacultyIcon sx={{ fontSize: 18, color: '#059669' }} />
+              ) : (
+                <CoursesIcon sx={{ fontSize: 18, color: '#d97706' }} />
+              )}
+            </Box>
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                {drilldown.type}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#64748b' }}>
+                {drilldown.deptName}
+              </Typography>
+            </Box>
+          </Box>
+          <IconButton onClick={() => setDrilldown((d) => ({ ...d, open: false }))} size="small" sx={{ color: '#94a3b8' }}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </DialogTitle>
+        <Divider />
+        <DialogContent sx={{ p: 0 }}>
+          {drilldown.loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+              <CircularProgress size={32} />
+            </Box>
+          ) : drilldown.rows.length === 0 ? (
+            <Box sx={{ py: 6, textAlign: 'center' }}>
+              <Typography variant="body2" sx={{ color: '#94a3b8' }}>No records found</Typography>
+            </Box>
+          ) : (
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    {drilldown.type === 'Students' && (
+                      <>
+                        <TableCell>Name</TableCell>
+                        <TableCell>Gender</TableCell>
+                        <TableCell>Phone</TableCell>
+                        <TableCell align="center">CGPA</TableCell>
+                        <TableCell align="center">Credits</TableCell>
+                      </>
+                    )}
+                    {drilldown.type === 'Faculty' && (
+                      <>
+                        <TableCell>Name</TableCell>
+                        <TableCell>Position</TableCell>
+                        <TableCell>Phone</TableCell>
+                        <TableCell>Hire Date</TableCell>
+                      </>
+                    )}
+                    {drilldown.type === 'Courses' && (
+                      <>
+                        <TableCell>Course Name</TableCell>
+                        <TableCell align="center">Credit Hours</TableCell>
+                      </>
+                    )}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {drilldown.rows.map((row, i) => (
+                    <TableRow key={i}>
+                      {drilldown.type === 'Students' && (
+                        <>
+                          <TableCell sx={{ fontWeight: 600 }}>{row.Name}</TableCell>
+                          <TableCell>{row.Gender}</TableCell>
+                          <TableCell>{row.PhoneNumber}</TableCell>
+                          <TableCell align="center">
+                            <Chip label={row.CGPA ?? '—'} size="small" sx={{ bgcolor: '#f0fdf4', color: '#16a34a', fontWeight: 700 }} />
+                          </TableCell>
+                          <TableCell align="center">{row.CompletedCreditHours ?? 0} / {row.RecordedCreditHours ?? 0}</TableCell>
+                        </>
+                      )}
+                      {drilldown.type === 'Faculty' && (
+                        <>
+                          <TableCell sx={{ fontWeight: 600 }}>{row.Name}</TableCell>
+                          <TableCell>{row.Position}</TableCell>
+                          <TableCell>{row.PhoneNumber}</TableCell>
+                          <TableCell>{row.HireDate ? new Date(row.HireDate).toLocaleDateString() : '—'}</TableCell>
+                        </>
+                      )}
+                      {drilldown.type === 'Courses' && (
+                        <>
+                          <TableCell sx={{ fontWeight: 600 }}>{row.Name}</TableCell>
+                          <TableCell align="center">
+                            <Chip label={`${row.CreditHours} cr`} size="small" sx={{ bgcolor: '#fefce8', color: '#d97706', fontWeight: 700 }} />
+                          </TableCell>
+                        </>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 2.5, pb: 2 }}>
+          <Typography variant="caption" sx={{ color: '#94a3b8', flexGrow: 1 }}>
+            {!drilldown.loading && `${drilldown.rows.length} record${drilldown.rows.length !== 1 ? 's' : ''}`}
+          </Typography>
+          <Button onClick={() => setDrilldown((d) => ({ ...d, open: false }))} sx={{ color: '#64748b', fontWeight: 600 }}>Close</Button>
         </DialogActions>
       </Dialog>
 

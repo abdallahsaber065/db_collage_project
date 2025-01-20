@@ -322,9 +322,9 @@ router.put('/:id', async (req, res) => {
         .query(`
           UPDATE Registrations
           SET LectureID = COALESCE(@lectureId::int, LectureID),
-              LabID = @labId::int,
-              Grade = COALESCE(@grade::varchar, Grade)
-          WHERE RegistrationID = @id
+              LabID = COALESCE(@labId::int, LabID),
+              Grade = COALESCE(@grade::text, Grade)
+          WHERE RegistrationID = @id::int
           RETURNING RegistrationID,
                 StudentID,
                 CourseID,
