@@ -32,13 +32,13 @@ router.get('/:id', async (req, res) => {
       .input('id', sql.Int, req.params.id)
       .query(`
         SELECT d.*, 
-          (SELECT COUNT(*) FROM Students WHERE Major = d.DepartmentID) as StudentCount,
-          (SELECT COUNT(*) FROM Employees WHERE DepartmentID = d.DepartmentID) as FacultyCount,
-          (SELECT COUNT(*) FROM Courses WHERE DepartmentID = d.DepartmentID) as CourseCount
+          (SELECT COUNT(*)::int FROM Students WHERE Major = d.DepartmentID) as StudentCount,
+          (SELECT COUNT(*)::int FROM Employees WHERE DepartmentID = d.DepartmentID) as FacultyCount,
+          (SELECT COUNT(*)::int FROM Courses WHERE DepartmentID = d.DepartmentID) as CourseCount
         FROM Departments d
         WHERE d.DepartmentID = @id
       `);
-    
+
     if (result.recordset.length === 0) {
       return res.status(404).json({ message: 'Department not found' });
     }
@@ -83,7 +83,7 @@ router.put('/:id', async (req, res) => {
       const deptCheck = await new sql.Request(transaction)
         .input('id', sql.Int, req.params.id)
         .query('SELECT * FROM Departments WHERE DepartmentID = @id');
-      
+
       if (deptCheck.recordset.length === 0) {
         throw new Error('Department not found');
       }
@@ -94,7 +94,7 @@ router.put('/:id', async (req, res) => {
           .input('id', sql.Int, req.params.id)
           .input('name', sql.VarChar(255), Name)
           .query('SELECT * FROM Departments WHERE Name = @name AND DepartmentID != @id');
-        
+
         if (nameCheck.recordset.length > 0) {
           throw new Error('A department with this name already exists');
         }
@@ -121,7 +121,7 @@ router.put('/:id', async (req, res) => {
     }
   } catch (err) {
     console.error("Error updating department:", err);
-      res.status(getMessage(err).includes('not found') ? 404 : 400)
+    res.status(getMessage(err).includes('not found') ? 404 : 400)
       .json({ message: getMessage(err) });
   }
 });
@@ -139,7 +139,7 @@ router.delete('/:id', async (req, res) => {
       const departmentCheck = await new sql.Request(transaction)
         .input('id', sql.Int, req.params.id)
         .query('SELECT * FROM Departments WHERE DepartmentID = @id');
-      
+
       if (departmentCheck.recordset.length === 0) {
         throw new Error('Department not found');
       }
@@ -149,19 +149,19 @@ router.delete('/:id', async (req, res) => {
         .input('id', sql.Int, req.params.id)
         .query(`
           SELECT 
-            (SELECT COUNT(*) FROM Students WHERE Major = @id) as StudentCount,
-            (SELECT COUNT(*) FROM Employees WHERE DepartmentID = @id) as FacultyCount,
-            (SELECT COUNT(*) FROM Courses WHERE DepartmentID = @id) as CourseCount
+            (SELECT COUNT(*)::int FROM Students WHERE Major = @id) as StudentCount,
+            (SELECT COUNT(*)::int FROM Employees WHERE DepartmentID = @id) as FacultyCount,
+            (SELECT COUNT(*)::int FROM Courses WHERE DepartmentID = @id) as CourseCount
         `);
-      
+
       const { StudentCount, FacultyCount, CourseCount } = checkResult.recordset[0];
-      
+
       if (StudentCount > 0 || FacultyCount > 0 || CourseCount > 0) {
         const dependencies = [];
         if (StudentCount > 0) dependencies.push(`${StudentCount} students`);
         if (FacultyCount > 0) dependencies.push(`${FacultyCount} faculty members`);
         if (CourseCount > 0) dependencies.push(`${CourseCount} courses`);
-        
+
         throw new Error(`Cannot delete department. It has: ${dependencies.join(', ')}. Please reassign or delete these first.`);
       }
 
