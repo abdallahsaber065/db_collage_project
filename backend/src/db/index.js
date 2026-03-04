@@ -4,11 +4,10 @@ require('dotenv').config();
 // Parse DATABASE_URL or fall back to individual environment variables
 const getDatabaseConfig = () => {
   if (process.env.DATABASE_URL) {
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.CONTEXT === 'production';
     return {
       connectionString: process.env.DATABASE_URL,
-      ssl: process.env.DATABASE_URL.includes('?')
-        ? true
-        : process.env.NODE_ENV === 'production',
+      ssl: isProduction ? { rejectUnauthorized: false } : false,
     };
   }
   // Fallback to individual variables for backward compatibility
@@ -18,7 +17,7 @@ const getDatabaseConfig = () => {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
-    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+    ssl: process.env.DB_SSL === 'true' || (process.env.NODE_ENV === 'production') ? { rejectUnauthorized: false } : false,
   };
 };
 
