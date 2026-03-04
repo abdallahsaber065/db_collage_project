@@ -5,6 +5,12 @@
         "backend",
         "frontend"
     ],
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "esbuild",
+            "unrs-resolver"
+        ]
+    },
     "scripts": {
         "dev:backend": "pnpm --dir backend run dev",
         "dev:frontend": "pnpm --dir frontend run dev",

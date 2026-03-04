@@ -1,5 +1,5 @@
 [build]
-  command = "pnpm install --frozen-lockfile && pnpm --filter frontend run build"
+  command = "pnpm install --frozen-lockfile && pnpm --dir frontend run build"
   publish = "frontend/dist"
   functions = "backend/netlify/functions"
 
